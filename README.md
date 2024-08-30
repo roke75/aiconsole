@@ -7,7 +7,8 @@ AIConsole is a command-line interface tool designed for managing various compone
 - [Usage](#usage)
   - [Vector Store Management](#vector-store-management)
   - [Assistant Management](#assistant-management)
-  - [Thread and Message Management](#thread-and-message-management)
+  - [Thread and Message Management](#thread-management)
+  - [Message Management](#message-management)
   - [Run Management](#run-management)
 - [Contribution](#contribution)
 - [License](#license)
@@ -19,7 +20,13 @@ To install AIConsole, clone the repository and install the necessary dependencie
 ```bash
 git clone https://github.com/roke75/AIConsole.git
 cd AIConsole
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
+```
+Create .env file with the following contents:
+```bash
+OPENAI_APIKEY=<YOUR_OPENAI_APIKEY>
 ```
 
 ## Usage
@@ -28,93 +35,139 @@ pip install -r requirements.txt
 
 - **List Vector Stores:**
   ```bash
-  python aiconsole.py list_vector_stores
+  python main.py store list
   ```
 
 - **Create Vector Store:**
   ```bash
-  python aiconsole.py create_vector_store --name <store_name> --type <store_type> --settings <settings_json>
+  python main.py store create --name <store_name>
+  ```
+
+- **Retrieve Vector Store:**
+  ```bash
+  python main.py store retrieve --id <store_id>
   ```
 
 - **Update Vector Store:**
   ```bash
-  python aiconsole.py update_vector_store --id <store_id> --settings <settings_json>
+  python main.py store update --id <store_id> --name <store_name> --anchor <anchor_timestamp> --days <days>
   ```
 
 - **Delete Vector Store:**
   ```bash
-  python aiconsole.py delete_vector_store --id <store_id>
+  python main.py store delete --id <store_id>
+  ```
+
+- **List Files in Vector Store:**
+  ```bash
+  python main.py store files list --store <store_id>
+  ```
+
+- **Upload File(s) to Vector Store:**
+  ```bash
+  python main.py store files add --store <store_id> --files <file_path_1> <file_path_2> ... <file_path_n>
+  ```
+
+  **Upload Directory to Vector Store:**
+  ```bash
+  python main.py store files add --store <store_id> --directory <directory_path> --recursive
+  ```
+
+  **Delete File(s) from Vector Store:**
+  ```bash
+  python main.py store files delete --store <store_id> (--all) (--permanently) --files <file_id_1> <file_id_2> ... <file_id_n>
   ```
 
 ### Assistant Management
 
 - **Create Assistant:**
   ```bash
-  python aiconsole.py create_assistant --name <assistant_name> --model <model_type> --instructions <instructions_json>
+  python main.py assistant create --name <assistant_name> --instructions <instructions> --model <model> --type <type> --store <store_id>
+  ```
+
+- **Retrieve Assistant:**
+  ```bash
+  python main.py assistant retrieve --id <assistant_id>
   ```
 
 - **List Assistants:**
   ```bash
-  python aiconsole.py list_assistants
+  python main.py assistant list
   ```
 
 - **Update Assistant:**
   ```bash
-  python aiconsole.py update_assistant --id <assistant_id> --settings <settings_json>
+  python main.py assistant update --id <assistant_id> --name <new_assistant_name> --instructions <new_instructions> --model <new_model> --type <new_type>
   ```
 
 - **Delete Assistant:**
   ```bash
-  python aiconsole.py delete_assistant --id <assistant_id>
+  python main.py assistant delete --id <assistant_id>
   ```
 
-### Thread and Message Management
+### Thread Management
 
 - **Create Thread:**
   ```bash
-  python aiconsole.py create_thread --name <thread_name>
+  python main.py thread create
+  ```
+
+- **Retrieve Thread:**
+  ```bash
+  python main.py thread retrieve --id <thread_id>
   ```
 
 - **List Threads:**
   ```bash
-  python aiconsole.py list_threads
+  python main.py thread list
   ```
 
-- **Create Message in Thread:**
+- **Update Thread:**
   ```bash
-  python aiconsole.py create_message --thread_id <thread_id> --content <message_content>
+  python main.py thread update --id <thread_id> --name <new_name>
   ```
 
-- **List Messages in Thread:**
+- **Delete Thread:**
   ```bash
-  python aiconsole.py list_messages --thread_id <thread_id>
+  python main.py thread delete --id <thread_id>
+  ```
+
+### Message Management
+- **Create Message**
+  ```bash
+  python main.py message create --thread <thread_id> --role <role> --content <content>
+  ```
+
+- **Retrieve Message:**
+  ```bash
+  python main.py message retrieve --id <message_id>
+  ```
+
+- **List Messages**
+  ```bash
+  python main.py message list
   ```
 
 - **Update Message:**
   ```bash
-  python aiconsole.py update_message --id <message_id> --content <new_content>
+  python main.py message update --thread <thread_id> --id <message_id>
   ```
 
 - **Delete Message:**
   ```bash
-  python aiconsole.py delete_message --id <message_id>
+  python main.py message delete --thread <thread_id> --id <message_id>
   ```
 
 ### Run Management
 
 - **Execute Run:**
   ```bash
-  python aiconsole.py execute_run --assistant_id <assistant_id> --thread_id <thread_id>
+  python main.py run --thread <thread_id> --assistant <assistant_id> --instructions <instructions>
   ```
 
 - **List Runs:**
   ```bash
-  python aiconsole.py list_runs
-  ```
-
-- **Get Run Result:**
-  ```bash
-  python aiconsole.py get_run_result --run_id <run_id>
+  python main.py run list
   ```
 
 ## Contribution
