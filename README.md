@@ -45,37 +45,47 @@ OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 
 - **Retrieve Vector Store:**
   ```bash
-  python main.py store retrieve --id <store_id>
+  python main.py store retrieve --store_id <store_id>
   ```
 
-- **Update Vector Store:**
+- **modify Vector Store:**
   ```bash
-  python main.py store update --id <store_id> --name <store_name> --anchor <anchor_timestamp> --days <days>
+  python main.py store modify --store_id <store_id> --name <store_name> --expires_after <expires_after> --metadata <metadata>
   ```
 
 - **Delete Vector Store:**
   ```bash
-  python main.py store delete --id <store_id>
+  python main.py store delete --store_id <store_id>
+  ```
+
+- **Create File to Vector Store:**
+  ```bash
+  python main.py store files create --store_id <store_id> --file_id <file_id> --chunking_strategy <chunking_strategy>
+  ```
+
+- **Retrieve File from Vector Store:**
+  ```bash
+  python main.py store files retrieve --store_id <store_id> --file_id <file_id>
   ```
 
 - **List Files in Vector Store:**
   ```bash
-  python main.py store files list --store <store_id>
+  python main.py store files list --store_id <store_id>
   ```
 
 - **Upload File(s) to Vector Store:**
   ```bash
-  python main.py store files add --store <store_id> --files <file_path_1> <file_path_2> ... <file_path_n>
+  python main.py store files add --store_id <store_id> --files <file_path_1> <file_path_2> ... <file_path_n>
   ```
 
   **Upload Directory to Vector Store:**
   ```bash
-  python main.py store files add --store <store_id> --directory <directory_path> --recursive
+  python main.py store files add --store_id <store_id> --directory <directory_path> --recursive
   ```
 
   **Delete File(s) from Vector Store:**
   ```bash
-  python main.py store files delete --store <store_id> (--all) (--permanently) --files <file_id_1> <file_id_2> ... <file_id_n>
+  python main.py store files delete --store_id <store_id> (--all) (--permanently) --file_ids <file_id_1> <file_id_2> ... <file_id_n>
   ```
 
 ### Assistant Management
