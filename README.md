@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ```
 Create .env file with the following contents:
 ```bash
-OPENAI_APIKEY=<YOUR_OPENAI_APIKEY>
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 ```
 
 ## Usage
