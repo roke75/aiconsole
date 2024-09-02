@@ -123,7 +123,7 @@ def add_files(client, store_id, files=None, directory=None, recursive=False):
         console.print(f"Failed to add files to store with id: {store_id}")
 
 
-def delete_files(client, store_id, files, delete_all=False, delete_permanently=False):
+def delete_files(client, store_id, file_ids, delete_all=False, delete_permanently=False):
     if delete_all:
         all_files = client.beta.vector_stores.files.list(
             vector_store_id=store_id
@@ -149,7 +149,7 @@ def delete_files(client, store_id, files, delete_all=False, delete_permanently=F
                     console.print(f"Failed to delete file permanently with id: {file.id}")
 
     else:
-        for file in files:
+        for file in file_ids:
             response = client.beta.vector_stores.files.delete(
                 vector_store_id=store_id,
                 file_id=file

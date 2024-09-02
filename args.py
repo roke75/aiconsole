@@ -41,46 +41,46 @@ def create_parser():
 
     # store retrieve
     store_retrieve_parser = store_subparsers.add_parser('retrieve', help='Retrieve a store')
-    store_retrieve_parser.add_argument('--id', required=True, help='ID of the store to retrieve')
+    store_retrieve_parser.add_argument('--store_id', required=True, help='ID of the store to retrieve')
 
     # store update
     store_update_parser = store_subparsers.add_parser('modify', help='Update a store')
-    store_update_parser.add_argument('--id', required=True, help='ID of the store to update')
+    store_update_parser.add_argument('--store_id', required=True, help='ID of the store to update')
     store_update_parser.add_argument('--name', help='New name of the store')
     store_update_parser.add_argument('--expires_after', type=json.loads, help='Number of days after which the store expires')
     store_update_parser.add_argument('--metadata', help='Metadata of the store')
 
     # store delete
     store_delete_parser = store_subparsers.add_parser('delete', help='Delete a store')
-    store_delete_parser.add_argument('--id', required=True, help='ID of the store to delete')
+    store_delete_parser.add_argument('--store_id', required=True, help='ID of the store to delete')
 
     # store files
     store_files_parser = store_subparsers.add_parser('files', help='File related commands')
     store_files_subparsers = store_files_parser.add_subparsers(dest="files_command")
     store_files_create_parser = store_files_subparsers.add_parser('create', help='Create a file')
-    store_files_create_parser.add_argument('--store', type=str, required=True, help='ID of the store')
+    store_files_create_parser.add_argument('--store_id', type=str, required=True, help='ID of the store')
     store_files_create_parser.add_argument('--file_id', type=str, required=True, help='ID of the file')
     store_files_create_parser.add_argument('--chunking_strategy', type=json.loads, help='Chunking strategy of the file')
     store_files_list_parser = store_files_subparsers.add_parser('list', help='List files in the store')
-    store_files_list_parser.add_argument('--store', required=True, help='ID of the store')
+    store_files_list_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_list_parser.add_argument('--limit', type=int, help='Maximum number of files to list')
     store_files_list_parser.add_argument('--order', type=str, help='Order of the files')
     store_files_list_parser.add_argument('--after', type=str, help='ID of the file after which to list')
     store_files_list_parser.add_argument('--before', type=str, help='ID of the file before which to list')
     store_files_list_parser.add_argument('--filter', type=str, choices=['in_progress', 'completed', 'failed', 'cancelled'], help='Filter of the files')
     store_files_retrieve_parser = store_files_subparsers.add_parser('retrieve', help='Retrieve a file')
-    store_files_retrieve_parser.add_argument('--store', required=True, help='ID of the store')
+    store_files_retrieve_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_retrieve_parser.add_argument('--file_id', required=True, help='ID of the file')
     store_files_add_parser = store_files_subparsers.add_parser('add', help='Add files to the store')
-    store_files_add_parser.add_argument('--store', required=True, help='ID of the store')
+    store_files_add_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_add_parser.add_argument('--files', nargs='+', help='Add a file(s) to the store')
     store_files_add_parser.add_argument('--directory', help='Add a directory to the store')
     store_files_add_parser.add_argument('--recursive', action='store_true', help='Recursively add a directory to the store')
     store_files_delete_parser = store_files_subparsers.add_parser('delete', help='Delete files from the store.')
-    store_files_delete_parser.add_argument('--store', required=True, help='ID of the store')
+    store_files_delete_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_delete_parser.add_argument('--all', action='store_true', help='Delete all files from the store.')
     store_files_delete_parser.add_argument('--permanently', action='store_true', help='Delete files also permanently from files.')
-    store_files_delete_parser.add_argument('--files', nargs='+', help='Delete a file(s) from the store')
+    store_files_delete_parser.add_argument('--file_ids', nargs='+', help='Delete a file(s) from the store')
 
     # assistant komennon alakomennot
     assistant_parser = subparsers.add_parser('assistant', help='Assistant related commands')
@@ -181,24 +181,24 @@ def parse_cmd_args():
         if args.store_command == "create":
             create_store(client, args.name, args.expires_after, args.metadata, args.file_ids, args.chunking_strategy)
         elif args.store_command == "delete":
-            delete_store(client, args.id)
+            delete_store(client, args.store_id)
         elif args.store_command == "list":
             list_stores(client, args.limit, args.order, args.after, args.before)
         elif args.store_command == "retrieve":
-            retrieve_store(client, args.id)
+            retrieve_store(client, args.store_id)
         elif args.store_command == "modify":
-            modify_store(client, args.id, args.name, args.expires_after, args.metadata)
+            modify_store(client, args.store_id, args.name, args.expires_after, args.metadata)
         elif args.store_command == "files":
             if args.files_command == "create":
                 create_file(client, args.store, args.file_id, args.chunking_strategy)
             elif args.files_command == "list":
-                list_files(client, args.store)
+                list_files(client, args.store_id)
             elif args.files_command == "add":
-                add_files(client, args.store, args.files, args.directory, args.recursive)
+                add_files(client, args.store_id, args.files, args.directory, args.recursive)
             elif args.files_command == "retrieve":
                 retrieve_file(client, args.store, args.file_id)
             elif args.files_command == "delete":
-                delete_files(client, args.store, args.files, args.all, args.permanently)
+                delete_files(client, args.store, args.file_ids, args.all, args.permanently)
     elif args.command == "assistant":
         if args.assistant_command == "create":
             create_assistant(client, args.name, args.instructions, args.model, args.type, args.store)
