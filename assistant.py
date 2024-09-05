@@ -1,23 +1,29 @@
-import time
-from rich.console import Console
-from rich.table import Table
-
-console = Console()
+from views import create_and_show_assistant_table, console_print
 
 
-def list_assistants(client):
-    assistants = client.beta.assistants.list()
+def list_assistants(client, limit=None, order=None, after=None, before=None):
+    assistants = client.beta.assistants.list(
+        limit=limit,
+        order=order,
+        after=after,
+        before=before
+    )
 
     create_and_show_assistant_table(assistants)
 
 
-def create_assistant(client, name, instructions, model, type, store):
+def create_assistant(client, model, name, description, instructions, tools, tool_resources, metadata, temperature, top_p, response_format):
     assistant = client.beta.assistants.create(
-        name=name,
-        instructions=instructions,
         model=model,
-        tools=[{"type": type}],
-        tool_resources={"file_search": {"vector_store_ids": [store]}}
+        name=name,
+        description=description,
+        instructions=instructions,
+        tools=tools,
+        tool_resources=tool_resources,
+        metadata=metadata,
+        temperature=temperature,
+        top_p=top_p,
+        response_format=response_format
     )
 
     create_and_show_assistant_table([assistant])
@@ -28,20 +34,25 @@ def retrieve_assistant(client, assistant_id):
         assistant_id
     )
 
-    print(assistant)
+    create_and_show_assistant_table([assistant])
 
 
-def update_assistant(client, assistant_id, name, instructions, model, type, store):
+def modify_assistant(client, assistant_id, model, name, description, instructions, tools, tool_resources, metadata, temperature, top_p, response_format):
     assistant = client.beta.assistants.update(
-        assistant_id=assistant_id,
-        name=name,
-        instructions=instructions,
+        assistant_id,
         model=model,
-        tools=[{"type": type}],
-        tool_resources={"file_search": {"vector_store_ids": [store]}}
+        name=name,
+        description=description,
+        instructions=instructions,
+        tools=tools,
+        tool_resources=tool_resources,
+        metadata=metadata,
+        temperature=temperature,
+        top_p=top_p,
+        response_format=response_format
     )
 
-    print(assistant)
+    create_and_show_assistant_table([assistant])
 
 
 def delete_assistant(client, assistant_id):
@@ -49,27 +60,7 @@ def delete_assistant(client, assistant_id):
         assistant_id
     )
 
-    print(assistant)
-
-
-def create_and_show_assistant_table(rows):
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Name", style="cyan")
-    table.add_column("Id", style="magenta")
-    table.add_column("Created", style="green")
-    table.add_column("Description", style="blue")
-    table.add_column("Model", style="blue")
-
-    for row in rows:
-        table.add_row(
-            row.name,
-            row.id,
-            time.strftime(
-                '%H:%M:%S %d.%m.%Y',
-                time.gmtime(row.created_at)
-            ),
-            row.description,
-            row.model
-        )
-
-    console.print(table)
+    if assistant.deleted:
+        console_print(f"Deleted assistant with id: {assistant.id}")
+    else:
+        console_print(f"Failed to delete assistant with id: {assistant.id}")

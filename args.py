@@ -4,10 +4,10 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from store import list_stores, create_store, retrieve_store, modify_store, delete_store, list_files, add_files, delete_files, create_file, retrieve_file
-from assistant import list_assistants, create_assistant, retrieve_assistant, update_assistant, delete_assistant
-from thread import list_threads, create_thread, retrieve_thread, update_thread, delete_thread
-from message import list_messages, create_message, create_run
-
+from assistant import list_assistants, create_assistant, retrieve_assistant, modify_assistant, delete_assistant
+from thread import list_threads, create_thread, retrieve_thread, modify_thread, delete_thread
+from message import list_messages, create_message, retrieve_message, modify_message, delete_message
+from run import list_runs, create_run, create_thread_and_run, retrieve_run, modify_run, submit_tool_outputs, cancel_run, create_run_and_poll
 
 load_dotenv()
 
@@ -20,11 +20,11 @@ def create_parser():
 
     subparsers = parser.add_subparsers(dest="command")
 
-    # store komennon alakomennot
+    # Store commands
     store_parser = subparsers.add_parser('store', help='Store related commands')
     store_subparsers = store_parser.add_subparsers(dest="store_command")
 
-    # store create
+    # Create store
     store_create_parser = store_subparsers.add_parser('create', help='Create a store')
     store_create_parser.add_argument('--name', help='Name of the store')
     store_create_parser.add_argument('--expires_after', type=json.loads, help='Number of days after which the store expires')
@@ -32,35 +32,39 @@ def create_parser():
     store_create_parser.add_argument('--file_ids', nargs='+', help='File IDs of the store')
     store_create_parser.add_argument('--chunking_strategy', help='Chunking strategy of the store')
 
-    # store list
+    # List stores
     store_list_parser = store_subparsers.add_parser('list', help='List stores')
     store_list_parser.add_argument('--limit', type=int, help='Maximum number of stores to list')
     store_list_parser.add_argument('--order', type=str, help='Order of the stores')
     store_list_parser.add_argument('--after', type=str, help='ID of the store after which to list')
     store_list_parser.add_argument('--before', type=str, help='ID of the store before which to list')
 
-    # store retrieve
+    # Retrieve store
     store_retrieve_parser = store_subparsers.add_parser('retrieve', help='Retrieve a store')
     store_retrieve_parser.add_argument('--store_id', required=True, help='ID of the store to retrieve')
 
-    # store update
+    # Modify store
     store_update_parser = store_subparsers.add_parser('modify', help='Update a store')
     store_update_parser.add_argument('--store_id', required=True, help='ID of the store to update')
     store_update_parser.add_argument('--name', help='New name of the store')
     store_update_parser.add_argument('--expires_after', type=json.loads, help='Number of days after which the store expires')
     store_update_parser.add_argument('--metadata', help='Metadata of the store')
 
-    # store delete
+    # Delete store
     store_delete_parser = store_subparsers.add_parser('delete', help='Delete a store')
     store_delete_parser.add_argument('--store_id', required=True, help='ID of the store to delete')
 
-    # store files
+    # Store File commands
     store_files_parser = store_subparsers.add_parser('files', help='File related commands')
     store_files_subparsers = store_files_parser.add_subparsers(dest="files_command")
+
+    # Create store file
     store_files_create_parser = store_files_subparsers.add_parser('create', help='Create a file')
     store_files_create_parser.add_argument('--store_id', type=str, required=True, help='ID of the store')
     store_files_create_parser.add_argument('--file_id', type=str, required=True, help='ID of the file')
     store_files_create_parser.add_argument('--chunking_strategy', type=json.loads, help='Chunking strategy of the file')
+
+    # List store files
     store_files_list_parser = store_files_subparsers.add_parser('list', help='List files in the store')
     store_files_list_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_list_parser.add_argument('--limit', type=int, help='Maximum number of files to list')
@@ -68,107 +72,209 @@ def create_parser():
     store_files_list_parser.add_argument('--after', type=str, help='ID of the file after which to list')
     store_files_list_parser.add_argument('--before', type=str, help='ID of the file before which to list')
     store_files_list_parser.add_argument('--filter', type=str, choices=['in_progress', 'completed', 'failed', 'cancelled'], help='Filter of the files')
+
+    # Retrieve store file
     store_files_retrieve_parser = store_files_subparsers.add_parser('retrieve', help='Retrieve a file')
     store_files_retrieve_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_retrieve_parser.add_argument('--file_id', required=True, help='ID of the file')
+
+    # Add files to store
     store_files_add_parser = store_files_subparsers.add_parser('add', help='Add files to the store')
     store_files_add_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_add_parser.add_argument('--files', nargs='+', help='Add a file(s) to the store')
     store_files_add_parser.add_argument('--directory', help='Add a directory to the store')
     store_files_add_parser.add_argument('--recursive', action='store_true', help='Recursively add a directory to the store')
+
+    # Delete files from store
     store_files_delete_parser = store_files_subparsers.add_parser('delete', help='Delete files from the store.')
     store_files_delete_parser.add_argument('--store_id', required=True, help='ID of the store')
     store_files_delete_parser.add_argument('--all', action='store_true', help='Delete all files from the store.')
     store_files_delete_parser.add_argument('--permanently', action='store_true', help='Delete files also permanently from files.')
     store_files_delete_parser.add_argument('--file_ids', nargs='+', help='Delete a file(s) from the store')
 
-    # assistant komennon alakomennot
+    # Assistant commands
     assistant_parser = subparsers.add_parser('assistant', help='Assistant related commands')
     assistant_subparsers = assistant_parser.add_subparsers(dest="assistant_command")
 
-    # assistant list
+    # List assistants
     assistant_list_parser = assistant_subparsers.add_parser('list', help='List assistants')
+    assistant_list_parser.add_argument('--limit', type=int, help='Maximum number of assistants to list')
+    assistant_list_parser.add_argument('--order', type=str, help='Order of the assistants')
+    assistant_list_parser.add_argument('--after', type=str, help='ID of the assistant after which to list')
+    assistant_list_parser.add_argument('--before', type=str, help='ID of the assistant before which to list')
 
-    # assistant create
+    # Create assistant
     assistant_create_parser = assistant_subparsers.add_parser('create', help='Create an assistant')
-    assistant_create_parser.add_argument('--name', required=True, help='Name of the assistant')
-    assistant_create_parser.add_argument('--instructions', help='Instructions of the assistant')
-    assistant_create_parser.add_argument('--model', help='Model of the assistant')
-    assistant_create_parser.add_argument('--type', help='Type of the assistant')
-    assistant_create_parser.add_argument('--store', help='Vector store of the assistant')
-    # assistant retrieve
+    assistant_create_parser.add_argument('--model', type=str, required=True, help='Model of the assistant')
+    assistant_create_parser.add_argument('--name', type=str, help='Name of the assistant')
+    assistant_create_parser.add_argument('--description', type=str, help='Description of the assistant')
+    assistant_create_parser.add_argument('--instructions', type=str, help='Instructions of the assistant')
+    assistant_create_parser.add_argument('--tools', nargs='+', type=json.loads, help='Type of the assistant')
+    assistant_create_parser.add_argument('--tool_resources', type=json.loads, help='Tool resources of the assistant')
+    assistant_create_parser.add_argument('--metadata', type=json.loads, help='Metadata of the assistant')
+    assistant_create_parser.add_argument('--temperature', type=float, help='Temperature of the assistant')
+    assistant_create_parser.add_argument('--top_p', type=float, help='Top_p of the assistant')
+    assistant_create_parser.add_argument('--response_format', type=json.loads, help='Response_format of the assistant')
+
+    # Retrieve assistant
     assistant_retrieve_parser = assistant_subparsers.add_parser('retrieve', help='Retrieve an assistant')
-    assistant_retrieve_parser.add_argument('--id', required=True, help='ID of the assistant to retrieve')
+    assistant_retrieve_parser.add_argument('--assistant_id', required=True, help='ID of the assistant to retrieve')
 
-    # assistant update
-    assistant_update_parser = assistant_subparsers.add_parser('update', help='Update an assistant')
-    assistant_update_parser.add_argument('--id', required=True, help='ID of the assistant to update')
+    # Modify assistant
+    assistant_modify_parser = assistant_subparsers.add_parser('modify', help='Update an assistant')
+    assistant_modify_parser.add_argument('--assistant_id', required=True, help='ID of the assistant to update')
+    assistant_modify_parser.add_argument('--model', type=str, help='Model of the assistant')
+    assistant_modify_parser.add_argument('--name', type=str, help='Name of the assistant')
+    assistant_modify_parser.add_argument('--description', type=str, help='Description of the assistant')
+    assistant_modify_parser.add_argument('--instructions', type=str, help='Instructions of the assistant')
+    assistant_modify_parser.add_argument('--tools', nargs='+', type=json.loads, help='Type of the assistant')
+    assistant_modify_parser.add_argument('--tool_resources', type=json.loads, help='Tool resources of the assistant')
+    assistant_modify_parser.add_argument('--metadata', type=json.loads, help='Metadata of the assistant')
+    assistant_modify_parser.add_argument('--temperature', type=float, help='Temperature of the assistant')
+    assistant_modify_parser.add_argument('--top_p', type=float, help='Top_p of the assistant')
+    assistant_modify_parser.add_argument('--response_format', type=json.loads, help='Response_format of the assistant')
 
-    # assistant delete
+    # Delete assistant
     assistant_delete_parser = assistant_subparsers.add_parser('delete', help='Delete an assistant')
-    assistant_delete_parser.add_argument('--id', required=True, help='ID of the assistant to delete')
+    assistant_delete_parser.add_argument('--assistant_id', required=True, help='ID of the assistant to delete')
 
-    # assistant komennon alakomennot
+    # Thread commands
     thread_parser = subparsers.add_parser('thread', help='Thread related commands')
     thread_subparsers = thread_parser.add_subparsers(dest="thread_command")
 
-    # thread list
+    # List threads
     thread_list_parser = thread_subparsers.add_parser('list', help='List threads')
 
-    # thread create
+    # Create thread
     thread_create_parser = thread_subparsers.add_parser('create', help='Create a thread')
+    thread_create_parser.add_argument('--messages', nargs='+', type=json.loads, help='Messages of the thread')
+    thread_create_parser.add_argument('--tool_resources', type=json.loads, help='Tool resources of the thread')
+    thread_create_parser.add_argument('--metadata', type=json.loads, help='Metadata of the thread')
 
-    # thread retrieve
+    # Retrieve thread
     thread_retrieve_parser = thread_subparsers.add_parser('retrieve', help='Retrieve a thread')
-    thread_retrieve_parser.add_argument('--id', required=True, help='ID of the thread to retrieve')
+    thread_retrieve_parser.add_argument('--thread_id', required=True, help='ID of the thread to retrieve')
 
-    # thread update
-    thread_update_parser = thread_subparsers.add_parser('update', help='Update a thread')
-    thread_update_parser.add_argument('--id', required=True, help='ID of the thread to update')
+    # Modify thread
+    thread_modify_parser = thread_subparsers.add_parser('modify', help='Modify a thread')
+    thread_modify_parser.add_argument('--thread_id', required=True, help='ID of the thread to modify')
+    thread_modify_parser.add_argument('--tool_resources', type=json.loads, help='Tool resources of the thread')
+    thread_modify_parser.add_argument('--metadata', type=json.loads, help='Metadata of the thread')
 
-    # thread delete
+    # Delete thread
     thread_delete_parser = thread_subparsers.add_parser('delete', help='Delete a thread')
-    thread_delete_parser.add_argument('--id', required=True, help='ID of the thread to delete')
+    thread_delete_parser.add_argument('--thread_id', required=True, help='ID of the thread to delete')
 
+    # Message commands
     message_parser = subparsers.add_parser('message', help='Message related commands')
     message_subparsers = message_parser.add_subparsers(dest="message_command")
 
-    # message list
+    # List messages
     message_list_parser = message_subparsers.add_parser('list', help='List messages')
+    message_list_parser.add_argument('--thread_id', required=True, help='ID of the thread')
+    message_list_parser.add_argument('--limit', type=int, help='Limit of the messages')
+    message_list_parser.add_argument('--order', type=str, help='Order of the messages')
+    message_list_parser.add_argument('--after', type=str, help='After of the messages')
+    message_list_parser.add_argument('--before', type=str, help='Before of the messages')
+    message_list_parser.add_argument('--run_id', type=str, help='Run_id of the messages')
 
-    # message create
+    # Create message
     message_create_parser = message_subparsers.add_parser('create', help='Create a message')
-    message_create_parser.add_argument('--thread', required=True, help='ID of the thread')
+    message_create_parser.add_argument('--thread_id', required=True, help='ID of the thread')
     message_create_parser.add_argument('--role', required=True, help='Role of the message')
     message_create_parser.add_argument('--content', required=True, help='Content of the message')
+    message_create_parser.add_argument('--attachments', nargs='+', help='Attachments of the message')
+    message_create_parser.add_argument('--metadata', type=json.loads, help='Metadata of the message')
 
-    # message retrieve
+    # Retrieve message
     message_retrieve_parser = message_subparsers.add_parser('retrieve', help='Retrieve a message')
-    message_retrieve_parser.add_argument('--thread', required=True, help='ID of the thread')
-    message_retrieve_parser.add_argument('--id', required=True, help='ID of the message')
+    message_retrieve_parser.add_argument('--thread_id', required=True, help='ID of the thread')
+    message_retrieve_parser.add_argument('--message_id', required=True, help='ID of the message')
 
-    # message update
-    message_update_parser = message_subparsers.add_parser('update', help='Update a message')
-    message_update_parser.add_argument('--thread', required=True, help='ID of the thread')
-    message_update_parser.add_argument('--id', required=True, help='ID of the message')
+    # Modify message
+    message_update_parser = message_subparsers.add_parser('modify', help='Modify a message')
+    message_update_parser.add_argument('--thread_id', required=True, help='ID of the thread')
+    message_update_parser.add_argument('--message_id', required=True, help='ID of the message')
+    message_update_parser.add_argument('--metadata', type=json.loads, help='Metadata of the message')
 
-    # message delete
+    # Delete message
     message_delete_parser = message_subparsers.add_parser('delete', help='Delete a message')
-    message_delete_parser.add_argument('--thread', required=True, help='ID of the thread')
-    message_delete_parser.add_argument('--id', required=True, help='ID of the message')
+    message_delete_parser.add_argument('--thread_id', required=True, help='ID of the thread')
+    message_delete_parser.add_argument('--message_id', required=True, help='ID of the message')
 
-    # run parser
+    # Run commands
     run_parser = subparsers.add_parser('run', help='Run related commands')
     run_subparsers = run_parser.add_subparsers(dest="run_command")
 
-    # list
+    # List runs
     run_list_parser = run_subparsers.add_parser('list', help='List runs')
+    run_list_parser.add_argument('--thread_id', type=str, required=True, help='ID of the thread')
+    run_list_parser.add_argument('--limit', type=int, help='Limit of the runs')
+    run_list_parser.add_argument('--order', type=str, help='Order of the runs')
+    run_list_parser.add_argument('--after', type=str, help='After of the runs')
+    run_list_parser.add_argument('--before', type=str, help='Before of the runs')
 
-    # create
+    # Create run
     run_create_parser = run_subparsers.add_parser('create', help='Create a run')
-    run_create_parser.add_argument('--thread', required=True, help='ID of the thread')
-    run_create_parser.add_argument('--assistant', required=True, help='ID of the assistant')
-    run_create_parser.add_argument('--instructions', required=True, help='Instructions of the run')
+    run_create_parser.add_argument('--thread_id', type=str, required=True, help='ID of the thread')
+    run_create_parser.add_argument('--assistant_id', type=str, required=True, help='ID of the assistant')
+    run_create_parser.add_argument('--model', type=str, help='Model of the run')
+    run_create_parser.add_argument('--instructions', type=str, help='Instructions of the run')
+    run_create_parser.add_argument('--additional_instructions', type=str, help='Additional instructions of the run')
+    run_create_parser.add_argument('--additional_messages', type=str, help='Additional messages of the run')
+    run_create_parser.add_argument('--tools', nargs='+', type=json.loads, help='Tools of the run')
+    run_create_parser.add_argument('--metadata', type=json.loads, help='Metadata of the run')
+    run_create_parser.add_argument('--temperature', type=float, help='Temperature of the run')
+    run_create_parser.add_argument('--top_p', type=float, help='Top_p of the run')
+    run_create_parser.add_argument('--stream', type=bool, help='Stream of the run')
+    run_create_parser.add_argument('--max_prompt_tokens', type=int, help='Max tokens of the run')
+    run_create_parser.add_argument('--max_completion_tokens', type=int, help='Max completion tokens of the run')
+    run_create_parser.add_argument('--truncation_strategy', type=json.loads, help='Truncation strategy of the run')
+    run_create_parser.add_argument('--tool_choice', help='Tool choice of the run')
+    run_create_parser.add_argument('--parallel_tool_calls', type=bool, help='Parallel tool calls of the run')
+    run_create_parser.add_argument('--response_format', help='Response format of the run')
+
+    # Create thread and run
+    run_create_thread_and_run_parser = run_subparsers.add_parser('create_thread_and_run', help='Create thread and run')
+    run_create_thread_and_run_parser.add_argument('--assistant_id', type=str, required=True, help='ID of the assistant')
+    run_create_thread_and_run_parser.add_argument('--thread', type=json.loads, help='Thread of the run')
+    run_create_thread_and_run_parser.add_argument('--model', type=str, help='Model of the run')
+    run_create_thread_and_run_parser.add_argument('--instructions', type=str, help='Instructions of the run')
+    run_create_thread_and_run_parser.add_argument('--tools', nargs='+', help='Tools of the run')
+    run_create_thread_and_run_parser.add_argument('--tool_resources', type=json.loads, help='Tool resources of the run')
+    run_create_thread_and_run_parser.add_argument('--metadata', type=json.loads, help='Metadata of the run')
+    run_create_thread_and_run_parser.add_argument('--temperature', type=float, help='Temperature of the run')
+    run_create_thread_and_run_parser.add_argument('--top_p', type=float, help='Top_p of the run')
+    run_create_thread_and_run_parser.add_argument('--stream', type=bool, help='Stream of the run')
+    run_create_thread_and_run_parser.add_argument('--max_prompt_tokens', type=int, help='Max prompt tokens of the run')
+    run_create_thread_and_run_parser.add_argument('--max_completion_tokens', type=int, help='Max completion tokens of the run')
+    run_create_thread_and_run_parser.add_argument('--truncation_strategy', type=json.loads, help='Truncation strategy of the run')
+    run_create_thread_and_run_parser.add_argument('--tool_choice', help='Tool choice of the run')
+    run_create_thread_and_run_parser.add_argument('--parallel_tool_calls', type=bool, help='Parallel tool calls of the run')
+    run_create_thread_and_run_parser.add_argument('--response_format', help='Response format of the run')
+
+    # Retrieve run
+    run_retrieve_parser = run_subparsers.add_parser('retrieve', help='Retrieve a run')
+    run_retrieve_parser.add_argument('--thread_id', type=str, required=True, help='ID of the thread')
+    run_retrieve_parser.add_argument('--run_id', type=str, required=True, help='ID of the run')
+
+    # Modify run
+    run_modify_parser = run_subparsers.add_parser('modify', help='Modify a run')
+    run_modify_parser.add_argument('--thread_id', type=str, required=True, help='ID of the thread')
+    run_modify_parser.add_argument('--run_id', type=str, required=True, help='ID of the run')
+    run_modify_parser.add_argument('--metadata', type=json.loads, help='Metadata of the run')
+
+    # Submit tool outputs
+    run_submit_tool_outputs_parser = run_subparsers.add_parser('submit_tool_outputs', help='Submit tool outputs')
+    run_submit_tool_outputs_parser.add_argument('--thread_id', type=str, required=True, help='ID of the thread')
+    run_submit_tool_outputs_parser.add_argument('--run_id', type=str, required=True, help='ID of the run')
+    run_submit_tool_outputs_parser.add_argument('--tool_outputs', nargs='+', type=json.loads, help='Tool outputs of the run')
+    run_submit_tool_outputs_parser.add_argument('--stream', type=bool, help='Stream of the run')
+
+    # Cancel run
+    run_cancel_parser = run_subparsers.add_parser('cancel', help='Cancel a run')
+    run_cancel_parser.add_argument('--thread_id', type=str, required=True, help='ID of the thread')
+    run_cancel_parser.add_argument('--run_id', type=str, required=True, help='ID of the run')
 
     return parser
 
@@ -201,39 +307,50 @@ def parse_cmd_args():
                 delete_files(client, args.store, args.file_ids, args.all, args.permanently)
     elif args.command == "assistant":
         if args.assistant_command == "create":
-            create_assistant(client, args.name, args.instructions, args.model, args.type, args.store)
+            create_assistant(client, args.model, args.name, args.description, args.instructions, args.tools, args.tool_resources, args.metadata, args.temperature, args.top_p, args.response_format)
         elif args.assistant_command == "list":
-            list_assistants(client)
+            list_assistants(client, args.limit, args.order, args.after, args.before)
         elif args.assistant_command == "retrieve":
-            print(f"Retrieving assistant with id: {args.id}")
-        elif args.assistant_command == "update":
-            print(f"Updating assistant with id: {args.id}")
+            retrieve_assistant(client, args.assistant_id)
+        elif args.assistant_command == "modify":
+            modify_assistant(client, args.assistant_id, args.model, args.name, args.description, args.instructions, args.tools, args.tool_resources, args.metadata, args.temperature, args.top_p, args.response_format)
         elif args.assistant_command == "delete":
-            print(f"Deleting assistant with id: {args.id}")
+            delete_assistant(client, args.assistant_id)
     elif args.command == "thread":
         if args.thread_command == "create":
-            create_thread(client)
+            create_thread(client, args.messages, args.tool_resources, args.metadata)
         elif args.thread_command == "list":
             print("OpenAI doesn't support listing threads yet")
+            list_threads(client)
         elif args.thread_command == "retrieve":
-            print(f"Retrieving thread with id: {args.id}")
-        elif args.thread_command == "update":
-            print(f"Updating thread with id: {args.id}")
+            retrieve_thread(client, args.thread_id)
+        elif args.thread_command == "modify":
+            modify_thread(client, args.thread_id, args.tool_resources, args.metadata)
         elif args.thread_command == "delete":
-            print(f"Deleting thread with id: {args.id}")
+            delete_thread(client, args.thread_id)
     elif args.command == "message":
         if args.message_command == "create":
-            create_message(client, args.thread, args.role, args.content)
+            create_message(client, args.thread_id, args.role, args.content, args.attachments, args.metadata)
         elif args.message_command == "list":
-            print("List messages")
+            list_messages(client, args.thread_id, args.limit, args.order, args.after, args.before, args.run_id)
         elif args.message_command == "retrieve":
-            print(f"Retrieving message with id: {args.id}")
-        elif args.message_command == "update":
-            print(f"Updating message with id: {args.id}")
+            retrieve_message(client, args.thread_id, args.message_id)
+        elif args.message_command == "modify":
+            modify_message(client, args.thread_id, args.message_id, args.metadata)
         elif args.message_command == "delete":
-            print(f"Deleting message with id: {args.id}")
+            delete_message(client, args.thread_id, args.message_id)
     elif args.command == "run":
         if args.run_command == "list":
-            print("List runs")
+            list_runs(client, args.thread_id, args.limit, args.order, args.after, args.before)
         elif args.run_command == "create":
-            create_run(client, args.thread, args.assistant, args.instructions)
+            create_run(client, args.thread_id, args.assistant_id, args.model, args.instructions, args.additional_instructions, args.additional_messages, args.tools, args.metadata, args.temperature, args.top_p, args.stream, args.max_prompt_tokens, args.max_completion_tokens, args.truncation_strategy, args.tool_choice, args.parallel_tool_calls, args.response_format)
+        elif args.run_command == "create_thread_and_run":
+            create_thread_and_run(client, args.assistant_id, args.thread, args.model, args.instructions, args.tools, args.tool_resources, args.metadata, args.temperature, args.top_p, args.stream, args.max_prompt_tokens, args.max_completion_tokens, args.truncation_strategy, args.tool_choice, args.parallel_tool_calls, args.response_format)
+        elif args.run_command == "retrieve":
+            retrieve_run(client, args.thread_id, args.run_id)
+        elif args.run_command == "modify":
+            modify_run(client, args.thread_id, args.run_id, args.metadata)
+        elif args.run_command == "submit_tool_outputs":
+            submit_tool_outputs(client, args.thread_id, args.run_id, args.tool_outputs, args.stream)
+        elif args.run_command == "cancel":
+            cancel_run(client, args.thread_id, args.run_id)

@@ -1,13 +1,7 @@
 import os
-import time
 from os import listdir
 from os.path import isfile, join
-from rich.console import Console
-from rich.table import Table
-
-
-console = Console()
-
+from views import create_and_show_store_table, create_and_show_file_table, console_print
 
 def list_stores(client, limit=None, order=None, after=None, before=None):
     vector_stores = client.beta.vector_stores.list(
@@ -56,9 +50,9 @@ def delete_store(client, store_id):
     )
 
     if vector_store.deleted:
-        console.print(f"Deleted store with id: {vector_store.id}")
+        console_print(f"Deleted store with id: {vector_store.id}")
     else:
-        console.print(f"Failed to delete store with id: {vector_store.id}")
+        console_print(f"Failed to delete store with id: {vector_store.id}")
 
 
 def create_file(client, store_id, file_id, chunking_strategy=None):
@@ -69,9 +63,9 @@ def create_file(client, store_id, file_id, chunking_strategy=None):
     )
 
     if file.id:
-        console.print(f"Created file with id: {file.id}")
+        console_print(f"Created file with id: {file.id}")
     else:
-        console.print(f"Failed to create file with id: {file.id}")
+        console_print(f"Failed to create file with id: {file.id}")
 
 
 def list_files(client, store_id, limit=None, order=None, after=None, before=None, filter=None):
@@ -118,9 +112,9 @@ def add_files(client, store_id, files=None, directory=None, recursive=False):
     )
 
     if file_batch.status == 'completed':
-        console.print(f"Added files to store with id: {store_id}")
+        console_print(f"Added files to store with id: {store_id}")
     else:
-        console.print(f"Failed to add files to store with id: {store_id}")
+        console_print(f"Failed to add files to store with id: {store_id}")
 
 
 def delete_files(client, store_id, file_ids, delete_all=False, delete_permanently=False):
@@ -136,17 +130,17 @@ def delete_files(client, store_id, file_ids, delete_all=False, delete_permanentl
             )
 
             if response.deleted:
-                console.print(f"Deleted file from store with id: {file.id}")
+                console_print(f"Deleted file from store with id: {file.id}")
             else:
-                console.print(f"Failed to delete file from store with id: {file.id}")
+                console_print(f"Failed to delete file from store with id: {file.id}")
 
             if delete_permanently:
                 response = client.files.delete(file.id)
 
                 if response.deleted:
-                    console.print(f"Deleted file permanently with id: {file.id}")
+                    console_print(f"Deleted file permanently with id: {file.id}")
                 else:
-                    console.print(f"Failed to delete file permanently with id: {file.id}")
+                    console_print(f"Failed to delete file permanently with id: {file.id}")
 
     else:
         for file in file_ids:
@@ -156,67 +150,14 @@ def delete_files(client, store_id, file_ids, delete_all=False, delete_permanentl
             )
 
             if response.deleted:
-                console.print(f"Deleted file with id: {file}")
+                console_print(f"Deleted file with id: {file}")
             else:
-                console.print(f"Failed to delete file with id: {file}")
+                console_print(f"Failed to delete file with id: {file}")
 
             if delete_permanently:
                 response = client.files.delete(file)
 
                 if response.deleted:
-                    console.print(f"Deleted file permanently with id: {file}")
+                    console_print(f"Deleted file permanently with id: {file}")
                 else:
-                    console.print(f"Failed to delete file permanently with id: {file}")
-
-
-def create_and_show_store_table(rows):
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Name", style="cyan")
-    table.add_column("Id", style="magenta")
-    table.add_column("Created", style="green")
-    table.add_column("Files", style="blue")
-    table.add_column("Size", style="blue")
-    table.add_column("Status", style="blue")
-    table.add_column("Expires after", style="blue")
-    table.add_column("Expires at", style="blue")
-
-    for row in rows:
-        table.add_row(
-            row.name,
-            row.id,
-            time.strftime(
-                '%H:%M:%S %d.%m.%Y',
-                time.gmtime(row.created_at)
-            ),
-            str(row.file_counts.total),
-            str(row.usage_bytes),
-            row.status,
-            str(row.expires_after.days) if row.expires_after else "None",
-            time.strftime(
-                '%H:%M:%S %d.%m.%Y',
-                time.gmtime(row.expires_at)
-            ) if row.expires_at else "None"
-        )
-
-    console.print(table)
-
-
-def create_and_show_file_table(rows):
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Id", style="cyan")
-    table.add_column("Created", style="green")
-    table.add_column("Size", style="blue")
-    table.add_column("Status", style="blue")
-
-    for row in rows:
-        table.add_row(
-            row.id,
-            time.strftime(
-                '%H:%M:%S %d.%m.%Y',
-                time.gmtime(row.created_at)
-            ),
-            str(row.usage_bytes),
-            row.status
-        )
-
-    console.print(table)
+                    console_print(f"Failed to delete file permanently with id: {file}")

@@ -1,8 +1,4 @@
-import time
-from rich.console import Console
-from rich.table import Table
-
-console = Console()
+from views import console_print, create_and_show_thread_table
 
 
 def list_threads(client):
@@ -11,10 +7,14 @@ def list_threads(client):
     create_and_show_thread_table(threads)
 
 
-def create_thread(client):
-    thread = client.beta.threads.create()
+def create_thread(client, messages, tool_resources, metadata):
+    thread = client.beta.threads.create(
+        messages=messages,
+        tool_resources=tool_resources,
+        metadata=metadata
+    )
 
-    console.print(f"Created thread with id: {thread.id}")
+    console_print(f"Created thread with id: {thread.id}")
 
 
 def retrieve_thread(client, thread_id):
@@ -25,11 +25,11 @@ def retrieve_thread(client, thread_id):
     create_and_show_thread_table([thread])
 
 
-
-def update_thread(client, thread_id, name):
+def modify_thread(client, thread_id, tool_resources, metadata):
     thread = client.beta.threads.update(
-        thread_id=thread_id,
-        name=name
+        thread_id,
+        tool_resources=tool_resources,
+        metadata=metadata
     )
 
     create_and_show_thread_table([thread])
@@ -41,19 +41,6 @@ def delete_thread(client, thread_id):
     )
 
     if thread.deleted:
-        console.print(f"Deleted thread with id: {thread.id}")
+        console_print(f"Deleted thread with id: {thread.id}")
     else:
-        console.print(f"Failed to delete thread with id: {thread.id}")
-
-
-def create_and_show_thread_table(rows):
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Name", style="cyan")
-    table.add_column("Id", style="magenta")
-    table.add_column("Created", style="green")
-    table.add_column("Description", style="blue")
-
-    for row in rows:
-        table.add_row(row.name, row.id, row.created_at, row.description)
-
-    console.print(table)
+        console_print(f"Failed to delete thread with id: {thread.id}")

@@ -1,47 +1,29 @@
-import time
-from rich.console import Console
-from rich.table import Table
-from rich.markdown import Markdown
-
-console = Console()
+from views import console_print, create_and_show_message_table
 
 
-def list_messages(client, thread_id):
+def list_messages(client, thread_id, limit, order, after, before, run_id):
     messages = client.beta.threads.messages.list(
-        thread_id
+        thread_id,
+        limit=limit,
+        order=order,
+        after=after,
+        before=before,
+        run_id=run_id
     )
 
     create_and_show_message_table(messages)
 
 
-def create_message(client, thread_id, role, content):
+def create_message(client, thread_id, role, content, attachments=None, metadata=None):
     message = client.beta.threads.messages.create(
-        thread_id=thread_id,
+        thread_id,
         role=role,
-        content=content
+        content=content,
+        attachments=attachments,
+        metadata=metadata
     )
 
-    print(message)
-
-
-def create_run(client, thread_id, assistant_id, instructions):
-    run = client.beta.threads.runs.create_and_poll(
-        thread_id=thread_id,
-        assistant_id=assistant_id,
-        instructions=instructions
-    )
-
-    if run.status == 'completed':
-        messages = client.beta.threads.messages.list(
-            thread_id=thread_id
-        )
-        response = ''
-        for message in messages.data:
-            response += message.content[0].text.value
-
-        console.print(Markdown(response))
-    else:
-        print(run.status)
+    create_and_show_message_table([message])
 
 
 def retrieve_message(client, thread_id, message_id):
@@ -49,19 +31,18 @@ def retrieve_message(client, thread_id, message_id):
         thread_id=thread_id,
         message_id=message_id
     )
-
+    print(message.content[0].text.value)
     create_and_show_message_table([message])
 
 
-def update_message(client, thread_id, message_id, role, content):
+def modify_message(client, thread_id, message_id, metadata):
     message = client.beta.threads.messages.update(
         thread_id=thread_id,
         message_id=message_id,
-        role=role,
-        content=content
+        metadata=metadata
     )
 
-    print(message)
+    create_and_show_message_table([message])
 
 
 def delete_message(client, thread_id, message_id):
@@ -70,20 +51,7 @@ def delete_message(client, thread_id, message_id):
         message_id=message_id
     )
 
-    print(message)
-
-
-def create_and_show_message_table(rows):
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Id", style="cyan")
-    table.add_column("Role", style="magenta")
-    table.add_column("Content", style="green")
-
-    for row in rows:
-        table.add_row(
-            str(row.id),
-            row.role,
-            row.content
-        )
-
-    console.print(table)
+    if message.deleted:
+        console_print(f"Deleted message with id: {message.id}")
+    else:
+        console_print(f"Failed to delete message with id: {message.id}")
