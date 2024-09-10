@@ -7,6 +7,7 @@ AIConsole is a command-line interface tool designed for managing various compone
 - [Installation](#installation)
 - [Usage](#usage)
 - [Commands](#commands)
+  - [Local project](#project)
   - [Store](#store)
   - [Assistant](#assistant)
   - [Thread](#thread)
