@@ -71,6 +71,38 @@ python main.py store list --limit 10 --order asc
 
 ### Example commands
 
+#### Local projects
+
+- **Create Project:**
+
+    ```bash
+    python main.py project create --name "Example Project" --instructions "You are helpfull senior Python developer." --model "gpt-4o"
+    ```
+
+- **List Projects:**
+
+    ```bash
+    python main.py project list
+    ```
+
+- **Add file(s) to project:**
+
+    ```bash
+    python main.py project files add --project_id "project_id"  --files platforms/openai/*.py
+    ```
+
+- **Delete file(s) from project:**
+
+    ```bash
+    python main.py project files delete --project_id "project_id"  --all --permanently
+    ```
+
+- **Ask Question:**
+
+    ```bash
+    python main.py project ask --project_id "project_id" --question "Is there any bugs in the code?"
+    ```
+
 #### Store
 
 - **Create Store:**

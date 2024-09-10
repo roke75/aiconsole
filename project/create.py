@@ -3,7 +3,7 @@ import json
 import random
 import string
 import time
-from views.views import create_and_show_project_table
+from views.views import create_and_show_project_table, console_print
 from platforms.openai.store import create_store, add_files, list_files, delete_files
 from platforms.openai.assistant import create_assistant, modify_assistant
 from platforms.openai.thread import create_thread
@@ -60,6 +60,8 @@ def create_project(client, name, description, platform, instructions, model):
     thread = create_thread(client, None, None, None)
 
     settings['projects'][rndstr]['thread_id'] = thread.id
+
+    console_print("Created project with id: " + rndstr)
 
     write_settings(settings)
 
