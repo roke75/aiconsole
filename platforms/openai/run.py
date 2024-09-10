@@ -1,4 +1,4 @@
-from views import console_print, console_print_markdown, create_and_show_run_table
+from views.views import console_print, console_print_markdown, create_and_show_run_table
 
 
 def create_run(client, thread_id, assistant_id, model, instructions, additional_instructions, additional_messages, tools, metadata, temperature, top_p, stream, max_prompt_tokens, max_completion_tokens, truncation_strategy, tool_choice, parallel_tool_calls=True, response_format=None):
@@ -26,7 +26,6 @@ def create_run(client, thread_id, assistant_id, model, instructions, additional_
 
 
 def create_thread_and_run(client, assistant_id, thread, model, instructions, tools, tool_resources, metadata, temperature, top_p, stream, max_prompt_tokens, max_completion_tokens, truncation_strategy, tool_choice, parallel_tool_calls=True, response_format=None):
-    print(parallel_tool_calls)
     thread = client.beta.threads.create_and_run(
         assistant_id=assistant_id,
         thread=thread,
@@ -111,9 +110,8 @@ def create_run_and_poll(client, thread_id, assistant_id, instructions):
         messages = client.beta.threads.messages.list(
             thread_id=thread_id
         )
-        response = ''
-        for message in messages.data:
-            response += message.content[0].text.value
+
+        response = messages.data[0].content[0].text.value
 
         console_print_markdown(response)
     else:

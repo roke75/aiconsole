@@ -1,4 +1,4 @@
-from views import console_print, create_and_show_thread_table
+from views.views import console_print, create_and_show_thread_table
 
 
 def list_threads(client):
@@ -7,7 +7,7 @@ def list_threads(client):
     create_and_show_thread_table(threads)
 
 
-def create_thread(client, messages, tool_resources, metadata):
+def create_thread(client, messages=None, tool_resources=None, metadata=None):
     thread = client.beta.threads.create(
         messages=messages,
         tool_resources=tool_resources,
@@ -15,6 +15,8 @@ def create_thread(client, messages, tool_resources, metadata):
     )
 
     console_print(f"Created thread with id: {thread.id}")
+
+    return thread
 
 
 def retrieve_thread(client, thread_id):

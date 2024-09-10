@@ -69,7 +69,7 @@ python main.py store list --help
 python main.py store list --limit 10 --order asc
 ```
 
-### Examples commands
+### Example commands
 
 #### Store
 

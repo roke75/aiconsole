@@ -1,7 +1,8 @@
 import os
 from os import listdir
 from os.path import isfile, join
-from views import create_and_show_store_table, create_and_show_file_table, console_print
+from pathlib import Path
+from views.views import create_and_show_store_table, create_and_show_file_table, console_print
 
 def list_stores(client, limit=None, order=None, after=None, before=None):
     vector_stores = client.beta.vector_stores.list(
@@ -24,6 +25,8 @@ def create_store(client, name, expires_after=None, metadata=None, file_ids=None,
     )
 
     create_and_show_store_table([vector_store])
+
+    return vector_store
 
 
 def retrieve_store(client, store_id):
@@ -92,20 +95,30 @@ def retrieve_file(client, store_id, file_id):
 
 def add_files(client, store_id, files=None, directory=None, recursive=False):
     file_paths = []
-    if files:
-        file_paths = [open(file, "rb") for file in files]
 
-    elif directory:
-        file_list = []
+    supported_file_types = ("c", "cpp", "css", "csv", "docx", "gif", "html", "java", "jpeg", "jpg", "js", "json", "md", "pdf", "php", "pkl", "png", "pptx", "py", "rb", "tar", "tex", "ts", "txt", "webp", "xlsx", "xml", "zip")
+
+    if directory:
+        files = []
         if recursive:
-            for root, _, files in os.walk(directory):
-                for file in files:
+            for root, _, all_files in os.walk(directory):
+                for file in all_files:
                     filepath = os.path.join(root, file)
-                    file_list.append(filepath)
+                    files.append(filepath)
         else:
-            file_list = [os.path.join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
+            files = [os.path.join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
 
-        file_paths = [open(path, "rb") for path in file_list]
+    supported_files = [f for f in files if f.split('.')[-1] in supported_file_types]
+
+    unsupported_files = [f for f in files if f.split('.')[-1] not in supported_file_types]
+
+    for unsupported_file in unsupported_files:
+        console_print(f"Skipping unsupported file type: {unsupported_file}")
+
+    try:
+        file_paths = [Path(file) for file in supported_files]
+    except IOError as e:
+        console_print(f"Error opening file: {e}")
 
     file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
         vector_store_id=store_id, files=file_paths

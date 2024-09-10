@@ -3,11 +3,12 @@ import argparse
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
-from store import list_stores, create_store, retrieve_store, modify_store, delete_store, list_files, add_files, delete_files, create_file, retrieve_file
-from assistant import list_assistants, create_assistant, retrieve_assistant, modify_assistant, delete_assistant
-from thread import list_threads, create_thread, retrieve_thread, modify_thread, delete_thread
-from message import list_messages, create_message, retrieve_message, modify_message, delete_message
-from run import list_runs, create_run, create_thread_and_run, retrieve_run, modify_run, submit_tool_outputs, cancel_run, create_run_and_poll
+from project.create import create_project, modify_project, delete_project, list_projects, add_files_to_project, list_files_in_project, delete_files_in_project, ask_project
+from platforms.openai.store import list_stores, create_store, retrieve_store, modify_store, delete_store, list_files, add_files, delete_files, create_file, retrieve_file
+from platforms.openai.assistant import list_assistants, create_assistant, retrieve_assistant, modify_assistant, delete_assistant
+from platforms.openai.thread import list_threads, create_thread, retrieve_thread, modify_thread, delete_thread
+from platforms.openai.message import list_messages, create_message, retrieve_message, modify_message, delete_message
+from platforms.openai.run import list_runs, create_run, create_thread_and_run, retrieve_run, modify_run, submit_tool_outputs, cancel_run, create_run_and_poll
 
 load_dotenv()
 
@@ -19,6 +20,61 @@ def create_parser():
     parser = argparse.ArgumentParser(description="AIConsole")
 
     subparsers = parser.add_subparsers(dest="command")
+
+    # Project commands
+    project_parser = subparsers.add_parser('project', help='Project related commands')
+    project_subparsers = project_parser.add_subparsers(dest="project_command")
+
+    # Create project
+    project_create_parser = project_subparsers.add_parser('create', help='Create a project')
+    project_create_parser.add_argument('--name', help='Name of the project')
+    project_create_parser.add_argument('--description', help='Description of the project')
+    project_create_parser.add_argument('--platform', help='AI Platform of the project')
+    project_create_parser.add_argument('--instructions', help='Instructions of the project')
+    project_create_parser.add_argument('--model', help='AI Model of the project')
+
+    # Modify project
+    project_modify_parser = project_subparsers.add_parser('modify', help='Modify a project')
+    project_modify_parser.add_argument('--project_id', help='ID of the project')
+    project_modify_parser.add_argument('--name', help='Name of the project')
+    project_modify_parser.add_argument('--description', help='Description of the project')
+    project_modify_parser.add_argument('--platform', help='AI Platform of the project')
+    project_modify_parser.add_argument('--instructions', help='Instructions of the project')
+    project_modify_parser.add_argument('--model', help='AI Model of the project')
+
+    # List projects
+    project_list_parser = project_subparsers.add_parser('list', help='List projects')
+
+    # Add files to project
+    project_files_parser = project_subparsers.add_parser('files', help='File related commands')
+    project_files_subparsers = project_files_parser.add_subparsers(dest="project_files_command")
+
+    # Create store file
+    project_files_add_parser = project_files_subparsers.add_parser('add', help='Add a file to a project')
+    project_files_add_parser.add_argument('--project_id', type=str, required=True, help='ID of the project')
+    project_files_add_parser.add_argument('--files', type=str, nargs='+', help='Add a file(s) to the store')
+    project_files_add_parser.add_argument('--directory', type=str, help='Add a directory to the store')
+    project_files_add_parser.add_argument('--recursive', action='store_true', help='Recursively add a directory to the store')
+
+    # List files in project
+    project_files_list_parser = project_files_subparsers.add_parser('list', help='List files in a project')
+    project_files_list_parser.add_argument('--project_id', type=str, required=True, help='ID of the project')
+
+    # Delete files in project
+    project_files_delete_parser = project_files_subparsers.add_parser('delete', help='Delete a file in a project')
+    project_files_delete_parser.add_argument('--project_id', type=str, required=True, help='ID of the project')
+    project_files_delete_parser.add_argument('--file_ids', type=str, nargs='+', help='ID of the file(s) to delete')
+    project_files_delete_parser.add_argument('--all', action='store_true', help='Delete all files in the project')
+    project_files_delete_parser.add_argument('--permanently', action='store_true', help='Permanently delete the file(s)')
+
+    # Ask project
+    project_ask_parser = project_subparsers.add_parser('ask', help='Ask a project')
+    project_ask_parser.add_argument('--project_id', help='ID of the project')
+    project_ask_parser.add_argument('--question', help='Question of the project')
+
+    # Delete project
+    project_delete_parser = project_subparsers.add_parser('delete', help='Delete a project')
+    project_delete_parser.add_argument('--project_id', help='ID of the project')
 
     # Store commands
     store_parser = subparsers.add_parser('store', help='Store related commands')
@@ -283,7 +339,25 @@ def parse_cmd_args():
     parser = create_parser()
     args = parser.parse_args()
 
-    if args.command == "store":
+    if args.command == "project":
+        if args.project_command == "create":
+            create_project(client, args.name, args.description, args.platform, args.instructions, args.model)
+        elif args.project_command == "modify":
+            modify_project(client, args.project_id, args.name, args.description, args.platform, args.instructions, args.model)
+        elif args.project_command == "delete":
+            delete_project(args.project_id)
+        elif args.project_command == "list":
+            list_projects()
+        elif args.project_command == "ask":
+            ask_project(client, args.project_id, args.question)
+        elif args.project_command == "files":
+            if args.project_files_command == "add":
+                add_files_to_project(client, args.project_id, args.files, args.directory, args.recursive)
+            elif args.project_files_command == "list":
+                list_files_in_project(client, args.project_id)
+            elif args.project_files_command == "delete":
+                delete_files_in_project(client, args.project_id, args.file_ids, args.all, args.permanently)
+    elif args.command == "store":
         if args.store_command == "create":
             create_store(client, args.name, args.expires_after, args.metadata, args.file_ids, args.chunking_strategy)
         elif args.store_command == "delete":

@@ -147,3 +147,31 @@ def create_and_show_run_table(rows):
         )
 
     console.print(table)
+
+
+def create_and_show_project_table(rows):
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Name", style="cyan")
+    table.add_column("Id", style="magenta")
+    table.add_column("Created", style="green")
+    table.add_column("Modified", style="blue")
+    table.add_column("Platform", style="blue")
+    table.add_column("Description", style="blue")
+
+    for project_id in rows:
+        table.add_row(
+            rows[project_id]["name"],
+            project_id,
+            time.strftime(
+                '%H:%M:%S %d.%m.%Y',
+                time.gmtime(rows[project_id]["created_at"])
+            ),
+            time.strftime(
+                '%H:%M:%S %d.%m.%Y',
+                time.gmtime(rows[project_id]["modified_at"])
+            ),
+            rows[project_id]["platform"],
+            rows[project_id]["description"],
+        )
+
+    console.print(table)

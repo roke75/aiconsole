@@ -1,5 +1,5 @@
-from views import create_and_show_assistant_table, console_print
-
+from views.views import create_and_show_assistant_table, console_print
+from openai import NOT_GIVEN
 
 def list_assistants(client, limit=None, order=None, after=None, before=None):
     assistants = client.beta.assistants.list(
@@ -28,6 +28,8 @@ def create_assistant(client, model, name, description, instructions, tools, tool
 
     create_and_show_assistant_table([assistant])
 
+    return assistant
+
 
 def retrieve_assistant(client, assistant_id):
     assistant = client.beta.assistants.retrieve(
@@ -37,7 +39,7 @@ def retrieve_assistant(client, assistant_id):
     create_and_show_assistant_table([assistant])
 
 
-def modify_assistant(client, assistant_id, model, name, description, instructions, tools, tool_resources, metadata, temperature, top_p, response_format):
+def modify_assistant(client, assistant_id, model=None, name=None, description=None, instructions=None, tools=None, tool_resources=None, metadata=None, temperature=None, top_p=None, response_format=None):
     assistant = client.beta.assistants.update(
         assistant_id,
         model=model,
