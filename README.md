@@ -7,7 +7,7 @@ AIConsole is a command-line interface tool designed for managing various compone
 - [Installation](#installation)
 - [Usage](#usage)
 - [Commands](#commands)
-  - [Local project](#project)
+  - [Local project](#local-project)
   - [Store](#store)
   - [Assistant](#assistant)
   - [Thread](#thread)
@@ -72,7 +72,7 @@ python main.py store list --limit 10 --order asc
 
 ### Example commands
 
-#### Local projects
+#### Local project
 
 - **Create Project:**
 
