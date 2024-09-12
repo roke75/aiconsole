@@ -3,6 +3,7 @@ import argparse
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from prompt_helper import create_prompt
 from project.create import create_project, modify_project, delete_project, list_projects, add_files_to_project, list_files_in_project, delete_files_in_project, ask_project
 from platforms.openai.store import list_stores, create_store, retrieve_store, modify_store, delete_store, list_files, add_files, delete_files, create_file, retrieve_file
 from platforms.openai.assistant import list_assistants, create_assistant, retrieve_assistant, modify_assistant, delete_assistant
@@ -20,6 +21,10 @@ def create_parser():
     parser = argparse.ArgumentParser(description="AIConsole")
 
     subparsers = parser.add_subparsers(dest="command")
+
+    # Prompt commands
+    prompt_parser = subparsers.add_parser('prompt', help='Prompt related commands')
+    prompt_parser.add_argument('--project_id', help='ID of the project')
 
     # Project commands
     project_parser = subparsers.add_parser('project', help='Project related commands')
@@ -339,7 +344,9 @@ def parse_cmd_args():
     parser = create_parser()
     args = parser.parse_args()
 
-    if args.command == "project":
+    if args.command == "prompt":
+        create_prompt(client, args.project_id)
+    elif args.command == "project":
         if args.project_command == "create":
             create_project(client, args.name, args.description, args.platform, args.instructions, args.model)
         elif args.project_command == "modify":

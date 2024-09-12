@@ -95,39 +95,43 @@ def retrieve_file(client, store_id, file_id):
 
 def add_files(client, store_id, files=None, directory=None, recursive=False):
     file_paths = []
-
-    supported_file_types = ("c", "cpp", "css", "csv", "docx", "gif", "html", "java", "jpeg", "jpg", "js", "json", "md", "pdf", "php", "pkl", "png", "pptx", "py", "rb", "tar", "tex", "ts", "txt", "webp", "xlsx", "xml", "zip")
-
-    if directory:
-        files = []
-        if recursive:
-            for root, _, all_files in os.walk(directory):
-                for file in all_files:
-                    filepath = os.path.join(root, file)
-                    files.append(filepath)
-        else:
-            files = [os.path.join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
-
-    supported_files = [f for f in files if f.split('.')[-1] in supported_file_types]
-
-    unsupported_files = [f for f in files if f.split('.')[-1] not in supported_file_types]
-
-    for unsupported_file in unsupported_files:
-        console_print(f"Skipping unsupported file type: {unsupported_file}")
-
-    try:
-        file_paths = [Path(file) for file in supported_files]
-    except IOError as e:
-        console_print(f"Error opening file: {e}")
-
-    file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
-        vector_store_id=store_id, files=file_paths
+    supported_file_types = (
+        "c", "cpp", "css", "csv", "docx", "gif", "html", "java", "jpeg",
+        "jpg", "js", "json", "md", "pdf", "php", "pkl", "png", "pptx",
+        "py", "rb", "tar", "tex", "ts", "txt", "webp", "xlsx", "xml", "zip"
     )
 
-    if file_batch.status == 'completed':
-        console_print(f"Added files to store with id: {store_id}")
-    else:
-        console_print(f"Failed to add files to store with id: {store_id}")
+    def is_valid_file(file):
+        return file.split('.')[-1] in supported_file_types
+
+    if directory:
+        for root, dirs, all_files in os.walk(directory):
+            # Exclude directories starting with '.' or '_'
+            dirs[:] = [d for d in dirs if not (d.startswith('.') or d.startswith('_') or d.startswith('venv'))]
+            for file_name in all_files:
+                # Exclude files starting with '.' or '_'
+                if not (file_name.startswith('.') or file_name.startswith('_')):
+                    file_path = os.path.join(root, file_name)
+                    if is_valid_file(file_name):
+                        file_paths.append(Path(file_path))
+            if not recursive:
+                break
+
+    if files:
+        for file in files:
+            if not (os.path.basename(file).startswith('.') or os.path.basename(file).startswith('_')):
+                try:
+                    file_paths.append(Path(file))
+                except IOError as e:
+                    console_print(f"Error opening file: {e}")
+
+    try:
+        file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
+            vector_store_id=store_id, files=file_paths
+        )
+        console_print(f"Successfully uploaded files: {file_paths}")
+    except Exception as e:
+        console_print(f"Failed to upload files: {e}")
 
 
 def delete_files(client, store_id, file_ids, delete_all=False, delete_permanently=False):
